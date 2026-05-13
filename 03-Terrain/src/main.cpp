@@ -34,6 +34,7 @@
 #include "Headers/Model.h"
 
 #include "Headers/AnimationUtils.h"
+#include "Headers/Terrain.h"			// librería para el terreno
 
 #define ARRAY_SIZE_IN_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
 
@@ -98,6 +99,10 @@ Model cowboyModelAnimate;
 Model guardianModelAnimate;
 // Cybog
 Model cyborgModelAnimate;
+// Cat
+Model catModelAnimate;
+
+Terrain terrain(-1,-1,200,32, "../Textures/heightmapP3.png");			// (gridx, gridy, tamaño, alturaMaxima, heigthmap)
 
 GLuint textureCespedID, textureWallID, textureWindowID, textureHighwayID, textureLandingPadID;
 GLuint skyboxTextureID;
@@ -116,7 +121,15 @@ std::string fileNames[6] = { "../Textures/mp_bloodvalley/blood-valley_ft.tga",
 		"../Textures/mp_bloodvalley/blood-valley_dn.tga",
 		"../Textures/mp_bloodvalley/blood-valley_rt.tga",
 		"../Textures/mp_bloodvalley/blood-valley_lf.tga" };
-
+/*
+std::string fileNames[6] = { 
+		"../Textures/clouds1/clouds1_north.bmp",
+		"../Textures/clouds1/clouds1_south.bmp",
+		"../Textures/clouds1/clouds1_up.bmp",
+		"../Textures/clouds1/clouds1_down.bmp",
+		"../Textures/clouds1/clouds1_west.bmp",
+		"../Textures/clouds1/clouds1_east.bmp" };
+*/
 bool exitApp = false;
 int lastMousePosX, offsetX = 0;
 int lastMousePosY, offsetY = 0;
@@ -133,8 +146,10 @@ glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
 glm::mat4 modelMatrixCowboy = glm::mat4(1.0f);
 glm::mat4 modelMatrixGuardian = glm::mat4(1.0f);
 glm::mat4 modelMatrixCyborg = glm::mat4(1.0f);
+glm::mat4 modelMatrixCat = glm::mat4(1.0f);
 
 int animationMayowIndex = 1;
+int animationCatIndex = 0;
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
 float rotBuzzHead = 0.0, rotBuzzLeftarm = 0.0, rotBuzzLeftForeArm = 0.0, rotBuzzLeftHand = 0.0;
 int modelSelected = 0;
@@ -362,6 +377,13 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	cyborgModelAnimate.loadModel("../models/cyborg/cyborg.fbx");
 	cyborgModelAnimate.setShader(&shaderMulLighting);
 
+	// Cat
+	catModelAnimate.loadModel("../models/cat/cat.fbx");
+	catModelAnimate.setShader(&shaderMulLighting);
+
+	terrain.init();
+	terrain.setShader(&shaderMulLighting);
+
 	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
 	
 	// Carga de texturas para el skybox
@@ -577,6 +599,7 @@ void destroy() {
 	cowboyModelAnimate.destroy();
 	guardianModelAnimate.destroy();
 	cyborgModelAnimate.destroy();
+	catModelAnimate.destroy();
 
 	// Textures Delete
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -654,7 +677,7 @@ bool processInput(bool continueApplication) {
 	if (enableCountSelected && glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS){
 		enableCountSelected = false;
 		modelSelected++;
-		if(modelSelected > 4)
+		if(modelSelected > 5)
 			modelSelected = 0;
 		if(modelSelected == 1)
 			fileName = "../animaciones/animation_dart_joints.txt";
@@ -799,6 +822,23 @@ bool processInput(bool continueApplication) {
 		animationMayowIndex = 0;
 	}
 
+	// Controles de cat
+	if (modelSelected == 5 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, 0.02f, glm::vec3(0, 1, 0));
+		animationCatIndex = 1;
+	} else if (modelSelected == 5 && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+		modelMatrixCat = glm::rotate(modelMatrixCat, -0.02f, glm::vec3(0, 1, 0));
+		animationCatIndex = 1;
+	}
+	if (modelSelected == 5 && glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, 0.02));
+		animationCatIndex = 1;
+	}
+	else if (modelSelected == 5 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+		modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0, 0.0, -0.02));
+		animationCatIndex = 1;
+	}
+
 	glfwPollEvents();
 	return continueApplication;
 }
@@ -837,6 +877,8 @@ void applicationLoop() {
 	modelMatrixGuardian = glm::rotate(modelMatrixGuardian, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
 
 	modelMatrixCyborg = glm::translate(modelMatrixCyborg, glm::vec3(5.0f, 0.05, 0.0f));
+
+	modelMatrixCat = glm::translate(modelMatrixCat, glm::vec3(0.0f, 0.05, 0.0f));
 
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
@@ -907,7 +949,7 @@ void applicationLoop() {
 		/*******************************************
 		 * Cesped
 		 *******************************************/
-		glm::mat4 modelCesped = glm::mat4(1.0);
+		/*glm::mat4 modelCesped = glm::mat4(1.0);
 		modelCesped = glm::translate(modelCesped, glm::vec3(0.0, 0.0, 0.0));
 		modelCesped = glm::scale(modelCesped, glm::vec3(200.0, 0.001, 200.0));
 		// Se activa la textura del agua
@@ -916,6 +958,14 @@ void applicationLoop() {
 		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(200, 200)));
 		boxCesped.render(modelCesped);
 		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(0, 0)));
+		glBindTexture(GL_TEXTURE_2D, 0);*/
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureCespedID);
+		terrain.setPosition(glm::vec3(100,0,100));		// Trasladar al origen del sistema de referencia
+		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(250,250)));	// Escalamiento de la textura
+		//terrain.enableWireMode();
+		terrain.render();
+		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(0,0)));	// Escalamiento de la textura
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		/*******************************************
@@ -984,6 +1034,7 @@ void applicationLoop() {
 		// Dart lego
 		// Se deshabilita el cull faces IMPORTANTE para la capa
 		glDisable(GL_CULL_FACE);
+		modelMatrixDart[3].y = terrain.getHeightTerrain(modelMatrixDart[3].x, modelMatrixDart[3].z);
 		glm::mat4 modelMatrixDartBody = glm::mat4(modelMatrixDart);
 		modelMatrixDartBody = glm::scale(modelMatrixDartBody, glm::vec3(0.5, 0.5, 0.5));
 		modelDartLegoBody.render(modelMatrixDartBody);
@@ -1041,20 +1092,20 @@ void applicationLoop() {
 		modelMatrizHead = glm::rotate(modelMatrizHead, rotBuzzHead, glm::vec3(0, 1, 0));
 		modelMatrizHead = glm::translate(modelMatrizHead, glm::vec3(0, 0, 0.017506));
 		modelBuzzHead.render(modelMatrizHead);
-
+		
 		glm::mat4 modelMatrixLeftArm = glm::mat4(modelMatrixTorso);
 		modelMatrixLeftArm = glm::translate(modelMatrixLeftArm, glm::vec3(0.179974, 0.577592, -0.022103));
 		modelMatrixLeftArm = glm::rotate(modelMatrixLeftArm, glm::radians(-65.0f), glm::vec3(0, 0, 1));
 		modelMatrixLeftArm = glm::rotate(modelMatrixLeftArm, rotBuzzLeftarm, glm::vec3(0, 1, 0));
 		modelMatrixLeftArm = glm::translate(modelMatrixLeftArm, glm::vec3(-0.179974, -0.577592, 0.022103));
 		modelBuzzLeftArm.render(modelMatrixLeftArm);
-
+		
 		glm::mat4 modelMatrixLeftForeArm = glm::mat4(modelMatrixLeftArm);
 		modelMatrixLeftForeArm = glm::translate(modelMatrixLeftForeArm, glm::vec3(0.298368, 0.583773, 0.008465));
 		modelMatrixLeftForeArm = glm::rotate(modelMatrixLeftForeArm, rotBuzzLeftForeArm, glm::vec3(0, 1, 0));
 		modelMatrixLeftForeArm = glm::translate(modelMatrixLeftForeArm, glm::vec3(-0.298368, -0.583773, -0.008465));
 		modelBuzzLeftForeArm.render(modelMatrixLeftForeArm);
-
+		
 		glm::mat4 modelMatrixLeftHand = glm::mat4(modelMatrixLeftForeArm);
 		modelMatrixLeftHand = glm::translate(modelMatrixLeftHand, glm::vec3(0.416066, 0.587046, 0.076258));
 		modelMatrixLeftHand = glm::rotate(modelMatrixLeftHand, glm::radians(45.0f), glm::vec3(0, 1, 0));
@@ -1062,24 +1113,53 @@ void applicationLoop() {
 		modelMatrixLeftHand = glm::rotate(modelMatrixLeftHand, glm::radians(-45.0f), glm::vec3(0, 1, 0));
 		modelMatrixLeftHand = glm::translate(modelMatrixLeftHand, glm::vec3(-0.416066, -0.587046, -0.076258));
 		modelBuzzLeftHand.render(modelMatrixLeftHand);
-
+		
 		/*****************************************
 		 * Objetos animados por huesos
 		 * **************************************/
+		modelMatrixMayow[3].y = terrain.getHeightTerrain(modelMatrixMayow[3].x, modelMatrixMayow[3].z);		// La posición en y cambia conforme al terreno
+		glm::vec3 upModel = glm::normalize(
+			terrain.getNormalTerrain(modelMatrixMayow[3].x, modelMatrixMayow[3].z)
+		);
+		glm::vec3 rightModel = glm::normalize(modelMatrixMayow[0]);
+		glm::vec3 frontModel = glm::normalize(glm::cross(rightModel, upModel)); 							// Producto cruz
+		rightModel = glm::normalize(glm::cross(upModel, frontModel));
+		modelMatrixMayow[0] = glm::vec4(rightModel, 0.0);
+		modelMatrixMayow[1] = glm::vec4(upModel, 0.0);														// La inclinación del modelo cambia confrome al terreno
+		modelMatrixMayow[2] = glm::vec4(frontModel, 0.0);
 		glm::mat4 modelMatrixMayowBody = glm::mat4(modelMatrixMayow);
 		modelMatrixMayowBody = glm::scale(modelMatrixMayowBody, glm::vec3(0.021f));
 		mayowModelAnimate.setAnimationIndex(animationMayowIndex);
 		mayowModelAnimate.render(modelMatrixMayowBody);
 		animationMayowIndex = 1;
+		
+		modelMatrixCat[3].y = terrain.getHeightTerrain(modelMatrixCat[3].x, modelMatrixCat[3].z);
+		upModel = glm::normalize(
+			terrain.getNormalTerrain(modelMatrixCat[3].x, modelMatrixCat[3].z)
+		);
+		rightModel = glm::normalize(modelMatrixCat[0]);
+		frontModel = glm::normalize(glm::cross(rightModel, upModel));
+		rightModel = glm::normalize(glm::cross(upModel, frontModel));
+		modelMatrixCat[0] = glm::vec4(rightModel, 0.0);
+		modelMatrixCat[1] = glm::vec4(upModel, 0.0);
+		modelMatrixCat[2] = glm::vec4(frontModel, 0.0);
+		glm::mat4 modelMatrixCatBody = glm::mat4(modelMatrixCat);
+		modelMatrixCatBody = glm::scale(modelMatrixCatBody, glm::vec3(0.0002));
+		catModelAnimate.setAnimationIndex(animationCatIndex);									// Ligar animación
+		catModelAnimate.render(modelMatrixCatBody);
+		animationCatIndex = 0;
 
+		modelMatrixCowboy[3].y = terrain.getHeightTerrain(modelMatrixCowboy[3].x, modelMatrixCowboy[3].z);
 		glm::mat4 modelMatrixCowboyBody = glm::mat4(modelMatrixCowboy);
 		modelMatrixCowboyBody = glm::scale(modelMatrixCowboyBody, glm::vec3(0.0021f));
 		cowboyModelAnimate.render(modelMatrixCowboyBody);
-
+		
+		modelMatrixGuardian[3].y = terrain.getHeightTerrain(modelMatrixGuardian[3].x, modelMatrixGuardian[3].z);
 		glm::mat4 modelMatrixGuardianBody = glm::mat4(modelMatrixGuardian);
 		modelMatrixGuardianBody = glm::scale(modelMatrixGuardianBody, glm::vec3(0.04f));
 		guardianModelAnimate.render(modelMatrixGuardianBody);
-
+		
+		modelMatrixCyborg[3].y = terrain.getHeightTerrain(modelMatrixCyborg[3].x, modelMatrixCyborg[3].z);
 		glm::mat4 modelMatrixCyborgBody = glm::mat4(modelMatrixCyborg);
 		modelMatrixCyborgBody = glm::scale(modelMatrixCyborgBody, glm::vec3(0.009f));
 		cyborgModelAnimate.setAnimationIndex(1);

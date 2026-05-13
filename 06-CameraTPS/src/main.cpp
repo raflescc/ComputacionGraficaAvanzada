@@ -21,6 +21,7 @@
 #include "Headers/Cylinder.h"
 #include "Headers/Box.h"
 #include "Headers/FirstPersonCamera.h"
+#include "Headers/ThirdPersonCamera.h"
 
 //GLM include
 #define GLM_FORCE_RADIANS
@@ -53,7 +54,9 @@ Shader shaderMulLighting;
 //Shader para el terreno
 Shader shaderTerrain;
 
-std::shared_ptr<FirstPersonCamera> camera(new FirstPersonCamera());
+//std::shared_ptr<FirstPersonCamera> camera(new FirstPersonCamera());
+std::shared_ptr<ThirdPersonCamera> camera(new ThirdPersonCamera());
+float distanceFromPlayer = 8.0f;
 
 Sphere skyboxSphere(20, 20);
 Box boxCesped;
@@ -220,10 +223,10 @@ const float giroEclipse = 0.5f;
 
 // Se definen todos las funciones.
 void reshapeCallback(GLFWwindow *Window, int widthRes, int heightRes);
-void keyCallback(GLFWwindow *window, int key, int scancode, int action,
-		int mode);
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode);
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
 void mouseButtonCallback(GLFWwindow *window, int button, int state, int mod);
+void mouseScrollCallback(GLFWwindow *window, double xscrollOffset, double yscrollOffset);
 void init(int width, int height, std::string strTitle, bool bFullScreen);
 void destroy();
 bool processInput(bool continueApplication = true);
@@ -265,6 +268,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	glfwSetKeyCallback(window, keyCallback);
 	glfwSetCursorPosCallback(window, mouseCallback);
 	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+	glfwSetScrollCallback(window, mouseScrollCallback);
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
 	// Init glew
@@ -404,7 +408,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	terrain.init();
 	terrain.setShader(&shaderTerrain);
 
-	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
+	//camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
+	camera->setSensitivity(1.0);							// Establecer sensibilidad
+	camera->setDistanceFromTarget(distanceFromPlayer);		// Establecer distancia
 	
 	// Carga de texturas para el skybox
 	Texture skyboxTexture = Texture("");
@@ -762,12 +768,17 @@ void mouseButtonCallback(GLFWwindow *window, int button, int state, int mod) {
 	}
 }
 
+void mouseScrollCallback(GLFWwindow *window, double xscrollOffset, double yscrollOffset){
+	distanceFromPlayer -= yscrollOffset;
+	camera->setDistanceFromTarget(distanceFromPlayer);
+}
+
 bool processInput(bool continueApplication) {
 	if (exitApp || glfwWindowShouldClose(window) != 0) {
 		return false;
 	}
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+// Esto es para cámara en primera paersona
+/*	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		camera->moveFrontCamera(true, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		camera->moveFrontCamera(false, deltaTime);
@@ -776,7 +787,14 @@ bool processInput(bool continueApplication) {
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera->moveRightCamera(true, deltaTime);
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-		camera->mouseMoveCamera(offsetX, offsetY, deltaTime);
+		camera->mouseMoveCamera(offsetX, offsetY, deltaTime);*/
+
+// Esto es para cámara en tercera persona
+	if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		camera->mouseMoveCamera(offsetX, 0, deltaTime);
+	if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+		camera->mouseMoveCamera(0, offsetY, deltaTime);
+	
 	offsetX = 0;
 	offsetY = 0;
 
@@ -936,6 +954,10 @@ bool processInput(bool continueApplication) {
 void applicationLoop() {
 	bool psi = true;
 
+	glm::vec3 PlayerPosition;			// Posición del personaje
+	glm::vec3 axisPlayer;				// Eje del personaje
+	float anglePlayer;					// Ángulo del personaje
+
 	modelMatrixEclipse = glm::translate(modelMatrixEclipse, glm::vec3(27.5, 0, 30.0));
 	modelMatrixEclipse = glm::rotate(modelMatrixEclipse, glm::radians(180.0f), glm::vec3(0, 1, 0));
 	int state = 0;
@@ -997,6 +1019,18 @@ void applicationLoop() {
 
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f),
 				(float) screenWidth / (float) screenHeight, 0.01f, 100.0f);
+
+		PlayerPosition = modelMatrixMayow[3];
+		axisPlayer = glm::axis(glm::quat_cast(modelMatrixMayow));
+		anglePlayer = glm::angle(glm::quat_cast(modelMatrixMayow));
+		camera->setCameraTarget(PlayerPosition);
+		if(std::isnan(anglePlayer));
+			anglePlayer = 0;
+		if(axisPlayer.y < 0)
+			anglePlayer *= -1;
+		camera->setAngleTarget(anglePlayer);
+		camera->updateCamera();
+
 		glm::mat4 view = camera->getViewMatrix();
 
 		// Settea la matriz de vista y projection al shader con solo color

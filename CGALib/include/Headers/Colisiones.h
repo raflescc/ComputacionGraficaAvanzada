@@ -209,6 +209,46 @@ bool testOBBOBB(AbstractModel::OBB a, AbstractModel::OBB b){
 
 	return true;
 }
-
+//Colisiones en un eje
+bool testSLABPlane(float p, float v, float min, float max, float &tmin, float &tmax){
+	if(fabs(v) < 0.01){
+		return p >= min && p <= max;
+	}
+	float ood = 1 / v;
+	float t1 = (min - p) / v;
+	float t2 = (max - p) / v;
+	if (t1 > t2){	// Swap del valor más pequeño
+		float temp = t1;
+		t1 = t2;
+		t2 = temp;
+	}
+	if(t1 > tmin)
+		tmin = t1;
+	if(t2 < tmax)
+		tmax = t1;
+	if(tmin > tmax)
+		return false;
+	return true;
+}
+// Colisiones en una caja
+bool intersectSegmentAABB(glm::vec3 o, glm::vec3 t, AbstractModel::AABB collider){
+	float tmin = -FLT_MAX;
+	float tmax = FLT_MAX;
+	glm::vec3 d = glm::normalize(t - o);
+	if(!testSLABPlane(o.x, d.x, collider.mins.x, collider.maxs.x, tmin, tmax))
+		return false;
+	if(!testSLABPlane(o.y, d.y, collider.mins.y, collider.maxs.y, tmin, tmax))
+		return false;
+	if(!testSLABPlane(o.z, d.z, collider.mins.z, collider.maxs.z, tmin, tmax))
+		return false;
+	// Significa que hay colisión
+	if(tmin >= 0 && tmin <= glm::length(t - o))
+		return true;
+	return false;
+}
+// Colisiones en una caja orientada
+bool testRayOBB(glm::vec3 o, glm::vec3 d, AbstractModel::OBB colliderOBB){
+	return false;
+}
 
 #endif /* COLISIONES_H_ */

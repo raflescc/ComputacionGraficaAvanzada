@@ -55,7 +55,7 @@ Box boxCesped;
 Box boxWalls;
 Box boxHighway;
 Box boxLandingPad;
-Sphere esfera1(10, 10);
+Sphere esfera1(7, 7);		//Esfera creada como ejemplo
 // Models complex instances
 Model modelRock;
 Model modelAircraft;
@@ -82,7 +82,7 @@ Model modelDartLegoRightHand;
 Model modelDartLegoLeftLeg;
 Model modelDartLegoRightLeg;
 
-GLuint textureCespedID, textureWallID, textureWindowID, textureHighwayID, textureLandingPadID;
+GLuint textureCespedID, textureWallID, textureWindowID, textureHighwayID, textureLandingPadID;		// Texturas
 GLuint skyboxTextureID;
 
 GLenum types[6] = {
@@ -159,19 +159,19 @@ bool processInput(bool continueApplication = true);
 // Implementacion de todas las funciones.
 void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
-	if (!glfwInit()) {
+	if (!glfwInit()) {		//Iniciar glfw
 		std::cerr << "Failed to initialize GLFW" << std::endl;
 		exit(-1);
 	}
 
-	screenWidth = width;
-	screenHeight = height;
+	screenWidth = width;	//Ancho de la ventana
+	screenHeight = height;	//Alto de la ventana
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);	//Versión de opengl
 
-	if (bFullScreen)
+	if (bFullScreen)		//Validar fullscreen
 		window = glfwCreateWindow(width, height, strTitle.c_str(),
 				glfwGetPrimaryMonitor(), nullptr);
 	else
@@ -189,10 +189,10 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(0);
 
-	glfwSetWindowSizeCallback(window, reshapeCallback);
-	glfwSetKeyCallback(window, keyCallback);
-	glfwSetCursorPosCallback(window, mouseCallback);
-	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+	glfwSetWindowSizeCallback(window, reshapeCallback);		//Eventos de redimensión de la pantalla
+	glfwSetKeyCallback(window, keyCallback);				//Eventos de teclado
+	glfwSetCursorPosCallback(window, mouseCallback);		//Eventos de movimiento de mouse
+	glfwSetMouseButtonCallback(window, mouseButtonCallback);//Eventos de click
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
 	// Init glew
@@ -203,11 +203,11 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		exit(-1);
 	}
 
-	glViewport(0, 0, screenWidth, screenHeight);
+	glViewport(0, 0, screenWidth, screenHeight);	//Zona de dibujo de la ventana
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);		//Buffer de profundidad
+	glEnable(GL_CULL_FACE);			//Buffer de caras ocultas
 
 	// Inicialización de los shaders
 	shader.initialize("../Shaders/colorShader.vs", "../Shaders/colorShader.fs");
@@ -231,8 +231,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	boxLandingPad.init();
 	boxLandingPad.setShader(&shaderMulLighting);
 
-	esfera1.init();
-	esfera1.setShader(&shaderMulLighting);
+	esfera1.init();								//Enviar información de la esfera a la tarjeta de video
+	esfera1.setShader(&shaderMulLighting);		//Shader asociado
 
 	modelRock.loadModel("../models/rock/rock.obj");
 	modelRock.setShader(&shaderMulLighting);
@@ -430,18 +430,20 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	textureHighway.freeImage();
 
 	// Definiendo la textura
-	Texture textureLandingPad("../Textures/landingPad.jpg");
-	textureLandingPad.loadImage(); // Cargar la textura
-	glGenTextures(1, &textureLandingPadID); // Creando el id de la textura del landingpad
-	glBindTexture(GL_TEXTURE_2D, textureLandingPadID); // Se enlaza la textura
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // Wrapping en el eje u
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Wrapping en el eje v
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // Filtering de minimización
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // Filtering de maximimizacion
+	Texture textureLandingPad("../Textures/landingPad.jpg");				// Seleccionar textura
+	textureLandingPad.loadImage();											// Cargar la textura
+	glGenTextures(1, &textureLandingPadID); 								// Creando el id de la textura del landingPad
+	glBindTexture(GL_TEXTURE_2D, textureLandingPadID);						// Se enlaza la textura
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	// Wrapping en el eje u		// REPEAT: Repetir textura
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);	// Wrapping en el eje v		// CLAMP: Estirar borde hasta la orilla
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);		// Filtering de minimización	// Cuando la textura se aleja	// Linear:
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);		// Filtering de maximimizacion	// Cuando la textura está cerca	   Suaviza la transición de los píxeles
 	if(textureLandingPad.getData()){
 		// Transferir los datos de la imagen a la tarjeta
-		glTexImage2D(GL_TEXTURE_2D, 0, textureLandingPad.getChannels() == 3 ? GL_RGB : GL_RGBA, textureLandingPad.getWidth(), textureLandingPad.getHeight(), 0,
-		textureLandingPad.getChannels() == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, textureLandingPad.getData());
+		glTexImage2D(GL_TEXTURE_2D, 0, textureLandingPad.getChannels() == 3 ? GL_RGB : GL_RGBA, 
+			textureLandingPad.getWidth(), textureLandingPad.getHeight(), 0,
+			textureLandingPad.getChannels() == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, 
+			textureLandingPad.getData());
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else 
@@ -466,7 +468,7 @@ void destroy() {
 	boxWalls.destroy();
 	boxHighway.destroy();
 	boxLandingPad.destroy();
-	esfera1.destroy();
+	esfera1.destroy();			// Liberar memoria de la tarjeta gráfica
 
 	// Custom objects Delete
 	modelAircraft.destroy();
@@ -691,14 +693,14 @@ void applicationLoop() {
 
 	while (psi) {
 		currTime = TimeManager::Instance().GetTime();
-		if(currTime - lastTime < 0.016666667){
+		if(currTime - lastTime < 0.016666667){		//Frame rate (60 fps)
 			glfwPollEvents();
 			continue;
 		}
 		lastTime = currTime;
 		TimeManager::Instance().CalculateFrameRate(true);
 		deltaTime = TimeManager::Instance().DeltaTime;
-		psi = processInput(true);
+		psi = processInput(true);		//Detectar eventos
 
 		// Variables donde se guardan las matrices de cada articulacion por 1 frame
 		std::vector<float> matrixDartJoints;
@@ -838,18 +840,34 @@ void applicationLoop() {
 		/*******************************************
 		 * Esfera 1
 		*********************************************/
+		glActiveTexture(GL_TEXTURE0);							//Indicar si tiene textura
+		glBindTexture(GL_TEXTURE_2D, textureHighwayID);			//Textura para la esfera
+		shaderMulLighting.setInt("texture1", 0);				//Unidad de textura
+		esfera1.setScale(glm::vec3(3.0, 3.0, 3.0));				//Escalamiento de la esfera
+		esfera1.setPosition(glm::vec3(3.0f, 2.0f, -15.0f));		//Posición de la esfera
+		esfera1.render();										//Render de la esfera
+
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureHighwayID);
+		glBindTexture(GL_TEXTURE_2D, textureWallID);
 		shaderMulLighting.setInt("texture1", 0);
-		esfera1.setScale(glm::vec3(3.0, 3.0, 3.0));
-		esfera1.setPosition(glm::vec3(3.0f, 2.0f, -10.0f));
+		esfera1.setScale(glm::vec3(7.0, 7.0, 7.0));
+		esfera1.setPosition(glm::vec3(3.0f, 2.0f, 10.0f));		//Posición de la esfera2
+		esfera1.enableWireMode();								//Visualizar la malla del modelo
+		esfera1.render();
+		esfera1.enableFillMode();
+
+		glActiveTexture(GL_TEXTURE0);							
+		glBindTexture(GL_TEXTURE_2D, textureWindowID);			
+		shaderMulLighting.setInt("texture1", 0);				
+		esfera1.setScale(glm::vec3(1.0, 2.0, 3.0));			
+		esfera1.setPosition(glm::vec3(0.0f, 6.0f, -5.0f));		
 		esfera1.render();
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureWallID);
 		shaderMulLighting.setInt("texture1", 0);
-		esfera1.setScale(glm::vec3(10.0, 10.0, 10.0));
-		esfera1.setPosition(glm::vec3(3.0f, 2.0f, 10.0f));
+		esfera1.setScale(glm::vec3(2.0, 2.0, 2.0));
+		esfera1.setPosition(glm::vec3(3.0f, 2.0f, 5.0f));
 		esfera1.enableWireMode();
 		esfera1.render();
 		esfera1.enableFillMode();
@@ -858,12 +876,12 @@ void applicationLoop() {
 		 * Landing pad
 		*******************************************/
 		boxLandingPad.setScale(glm::vec3(10.0f, 0.05f, 10.0f));
-		boxLandingPad.setPosition(glm::vec3(5.0f, 0.05f, -5.0f));
+		boxLandingPad.setPosition(glm::vec3(15.0f, 0.05f, -15.0f));
 		boxLandingPad.setOrientation(glm::vec3(0.0f, 0.0f, 0.0f));
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureLandingPadID);
 		shaderMulLighting.setInt("texture1", 0);
-		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(2.0, 2.0)));
+		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(3.0, 4.0)));	// Wrapping eje u y eje v
 		boxLandingPad.render();
 		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(1.0, 1.0)));
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -1001,8 +1019,8 @@ void applicationLoop() {
 }
 
 int main(int argc, char **argv) {
-	init(800, 700, "Window GLFW", false);
-	applicationLoop();
+	init(800, 700, "Window GLFW", false);		//Configuración de la ventana
+	applicationLoop();							//Método para mantener la ventana abierta
 	destroy();
 	return 1;
 }

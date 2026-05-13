@@ -37,7 +37,7 @@ struct  SpotLight{
 };
 
 const int MAX_POINT_LIGHTS = 20;
-const int MAX_SPOT_LIGHTS = 1;
+const int MAX_SPOT_LIGHTS = 5;
 
 out vec4 color;
 
@@ -57,14 +57,27 @@ uniform vec3 viewPos;
 uniform vec2 scaleUV;  
   
 uniform sampler2D backgroundTexture;
+uniform sampler2D rTexture;				// Textura para roca
+uniform sampler2D bTexture;				// Las texturas corresponden a los
+uniform sampler2D gTexture;				// colores rgb que serán susutituidos
+uniform sampler2D blendMapTexture;		// por las texturas correpondeintes
 
 vec3 calculateDirectionalLight(Light light, vec3 direction){
 	vec2 tiledCoords = our_uv;
 	if(tiledCoords.x != 0 && tiledCoords.y != 0)
 		tiledCoords = scaleUV * tiledCoords;
 	
-	vec4 backgroundTextureColor = texture(backgroundTexture, tiledCoords);
-	vec4 totalColor = backgroundTextureColor;
+	//vec4 backgroundTextureColor = texture(backgroundTexture, tiledCoords);
+	//vec4 totalColor = backgroundTextureColor;
+
+	// Nueva versión
+	vec4 blendMapColor = texture(blendMapTexture, our_uv);
+	float principalTextureCantidad = 1 - (blendMapColor.r + blendMapColor.g + blendMapColor.b);	// Se están apaagando los colores para que sólo quede el negro
+	vec4 principalTextureColor = texture(backgroundTexture, tiledCoords) * principalTextureCantidad;
+	vec4 rTextureColor = texture(rTexture, tiledCoords) * blendMapColor.r;		// Valores para cada textura
+	vec4 gTextureColor = texture(gTexture, tiledCoords) * blendMapColor.g;
+	vec4 bTextureColor = texture(bTexture, tiledCoords) * blendMapColor.b;
+	vec4 totalColor = principalTextureColor + rTextureColor  + gTextureColor + bTextureColor;	// Combinación de todos los colores
 
 	// Ambient
     vec3 ambient  = light.ambient * vec3(totalColor);
