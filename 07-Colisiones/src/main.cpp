@@ -1637,9 +1637,12 @@ void applicationLoop() {
 				std::cout << "Seleccionando desde el modelo may => " <<it->first <<std::endl;
 			}
 		}
-		for(auto it = collidersOBB.begin(); it != collidersOBB.end(); it++){
+		for(auto it = collidersOBB.begin(); it != collidersOBB.end(); it++){		// Mouse a escena
 			if(testRayOBB(od, td, std::get<0>(it->second))){
-
+				std::cout << "Seleccionando el modelo => " << it->first << std::endl;
+			}
+			if(testRayOBB(rayOrigin, rayTarget, std::get<0>(it->second))){			// May a modelos
+				std::cout << "Seleccionando desde el modelo may => " <<it->first <<std::endl;
 			}
 		}
 

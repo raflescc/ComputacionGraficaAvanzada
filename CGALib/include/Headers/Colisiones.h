@@ -248,7 +248,18 @@ bool intersectSegmentAABB(glm::vec3 o, glm::vec3 t, AbstractModel::AABB collider
 }
 // Colisiones en una caja orientada
 bool testRayOBB(glm::vec3 o, glm::vec3 d, AbstractModel::OBB colliderOBB){
-	return false;
+	// 1.- Obtener el quaternion inversio de la orientación de la caja
+	glm::quat qInv = glm::inverse(colliderOBB.u);	// u = orienteación de la caja
+	// 2.- Transfomar origen y destino del rayo en relación inversa
+	glm::vec3 oTemp = qInv * o;
+	glm::vec3 tTemp = qInv * d;	// Destino del rayo (?)
+	glm::vec3 cOBBTemp = qInv * colliderOBB.c;	// Centro de la caja (?)
+	// 3.- Crear la AABB
+	AbstractModel::AABB aabb;
+	aabb.mins = cOBBTemp - colliderOBB.e;	// Del centro al ?
+	aabb.maxs = cOBBTemp + colliderOBB.e;
+	// 4.- Aplicar la prueba de colidion entre AABB
+	return intersectSegmentAABB(oTemp, tTemp, aabb);
 }
 
 #endif /* COLISIONES_H_ */
